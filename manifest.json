@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "CloseLoginInfo",
+  "description": "关闭知乎登陆界面",
+  "version": "1.0",
+  "action": {
+  },
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["source/closeZhihuLogin.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
