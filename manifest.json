@@ -10,7 +10,7 @@
     {
       "matches": ["*://*/*"],
       "js": ["source/closeZhihuLogin.js"],
-      "run_at": "document_start"
+      "run_at": "document_end"
     }
   ]
 }

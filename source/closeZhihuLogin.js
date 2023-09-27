@@ -1,84 +1,52 @@
-function showAllNode(root,level){
-    //console.log("i am level:",level)
-    var s=""
-    for (var l=0;l<level;l++){
-        s=s+"  "
+function getXpath(xpath, contextNode, doc = document) {
+    contextNode = contextNode || doc;
+    try {
+        const result = doc.evaluate(xpath, contextNode, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+        // 应该总是返回一个元素节点
+        return result.singleNodeValue && result.singleNodeValue.nodeType === 1 && result.singleNodeValue;
+    } catch (err) {
+        throw new Error(`无效 Xpath: ${xpath}`);
     }
-    var attrs=root.attributes
-    var attrStr="["
-    for (var i=0;i<attrs.length;i++){
-        attrStr=attrStr+" "+attrs[i].name+":"+attrs[i].value
-    }
-    attrStr=attrStr+"]"
-    console.log(s,root.tagName,attrStr)
-    var childs=root.children
-    if (childs!=null) {
-    //    console.log("childsLen:",childs.length)
-        for (var i = 0; i < (childs.length); i++) {
-            var child=childs[i]
-            showAllNode(child, level + 1)
-        }
-    }
-
 }
-function simulateClick(element) {
-    if (element==null ||element==undefined){
-        return
-    }
-    var event = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window
-    });
-    var canceled = element.dispatchEvent(event);
-    console.log("点击完毕：",canceled)
-}
-function solve(){
-    console.log("i am run")
-    //showAllNode(document.body,0)
-    console.log("after traver")
-    const btn=document.querySelector("[aria-label='关闭']")
-    if (btn!=null){
-       for (var i=0;i<btn.length;i++){
-           console.log(btn[i].tagName,":")
-           for (var j=0;j<btn[i].attributes.length;j++){
-               console.log(btn[i].attributes[j])
-           }
 
-       }
-        btn.addEventListener("click",()=>{
-            console.log("你点击了，我发现了")
-        })
-        console.log("开始点击")
-        simulateClick(btn)
-    }
-    console.log("i am over")
-    let observer = new MutationObserver(
-        // 回调函数是一个 MutationRecord 实例数组。格式如下：
-        //     [MutationRecord, MutationRecord, MutationRecord, ...]
-        (mutationRecords) => {
-            console.log("i am ob run x")
-            for (var i=0;i<mutationRecords.length;i++){
-                console.log(mutationRecords)
+function removeLogin() {
+    const removeLoginModal = (mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+            for (const target of mutation.addedNodes) {
+                if (target.nodeType != 1) return
+                if (target.querySelector('.signFlowModal')) {
+                    let button = target.querySelector('.Button.Modal-closeButton.Button--plain');
+                    if (button) button.click();
+                } else if (getXpath('//button[text()="立即登录/注册"]',target)) {
+                    target.remove();
+                }
             }
         }
-    );
-    rootNode=document.getRootNode()
-    observer.observe(rootNode, {
-        // 观察子节点变化
-        childList: true,
+    };
 
-    });
+    // 未登录时才会监听并移除登录弹窗
+    if(location.hostname === 'zhuanlan.zhihu.com') { // 如果是文章页
+        if (!document.querySelector('.ColumnPageHeader-profile>.AppHeader-menu')) { // 未登录
+            const observer = new MutationObserver(removeLoginModal);
+            observer.observe(document, { childList: true, subtree: true });
+            if (getXpath('//button[text()="登录/注册"]')) getXpath('//button[text()="登录/注册"]').outerHTML = '<a class="Button AppHeader-login Button--blue" href="https://www.zhihu.com/signin" target="_blank">登录/注册</a>'; // [登录] 按钮跳转至登录页面
+        }
+    } else { // 不是文章页
+        if (!document.querySelector('.AppHeader-profile>.AppHeader-menu')) { // 未登录
+            const observer = new MutationObserver(removeLoginModal);
+            observer.observe(document, { childList: true, subtree: true });
+            document.lastElementChild.appendChild(document.createElement('style')).textContent = '.Question-mainColumnLogin, button.AppHeader-login {display: none !important;}'; // 屏蔽问题页中间的登录提示
+            if (getXpath('//button[text()="登录/注册"]')) getXpath('//button[text()="登录/注册"]').outerHTML = '<a class="Button AppHeader-login Button--blue" href="https://www.zhihu.com/signin" target="_blank">登录/注册</a>'; // [登录] 按钮跳转至登录页面
+        }
+    }
+}
+function solve(){
+    removeLogin()
+
 
 
 }
-//solve()
-//setTimeout(solve,5000)
-window.addEventListener("load", (event) => {
-    console.log("page is fully loaded");
-    solve()
-});
-
+solve()
 
 
 
